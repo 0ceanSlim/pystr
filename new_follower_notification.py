@@ -26,20 +26,12 @@ async def handle_event(event_json):
 
 async def handle_follow_list(follow_list_event):
     if "tags" in follow_list_event:
-        # Check if your pubkey is in the list of "p" tags
-        your_pubkey_in_list = any(tag[0] == "p" and tag[1] == your_pubkey for tag in follow_list_event["tags"])
-        
-        if your_pubkey_in_list:
-            # If your pubkey is in the list, print the author as a follower
-            author_pubkey = follow_list_event.get("pubkey", "")
-            if author_pubkey:
-                print(f"{author_pubkey} is a new follower!")
+        # Extract the list of "p" tags from the follow list event
+        p_tags = [tag for tag in follow_list_event["tags"] if tag[0] == "p"]
+
+        # Check if your pubkey is the last entry in the "p" tags
+        if p_tags and p_tags[-1][1] == your_pubkey:
+            print(f"You have a new follower: {follow_list_event.get('pubkey', '')}")
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(listen_to_relay())
-    
-    #TODO Fix for intended effect
-## Right now, this prints when someone that has you in thier follow list, follows someone.
-# It was intended to show when someone follows you, and that works but it's looking for 
-# kind 3 events and If I'm in it, I get a print out. So this also print if someone follows me 
-# already follows anyone else. 
