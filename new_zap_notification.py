@@ -38,8 +38,31 @@ async def handle_zap_receipt(zap_receipt_event):
             # print(f"{recipient_pubkey}")
 
     if recipient_pubkey == your_pubkey:
-        #sender_pubkey = next((value for key, value in zap_receipt_event[2]["tags"] if key == "P"), None)
-        print(f"Received a zap") # from {sender_pubkey} to {recipient_pubkey}")
+        sender_pubkey = next((value for key, value in zap_receipt_event[2]["tags"] if key.lower() == "p"), None)
+
+        bolt11_invoice = next((value for key, value in zap_receipt_event[2]["tags"] if key == "bolt11"), None)
+        if bolt11_invoice:
+                amount_pos = bolt11_invoice.find("lnbc") + 4  # Position of the amount in the string
+                amount_str = ""
+                while amount_pos < len(bolt11_invoice) and (bolt11_invoice[amount_pos].isdigit() or bolt11_invoice[amount_pos] in "upm"):
+                    amount_str += bolt11_invoice[amount_pos]
+                    amount_pos += 1
+
+                amount_multiplier = amount_str[-1]
+                amount_value = int(amount_str[:-1]) if amount_str[:-1].isdigit() else 1
+                
+                if amount_multiplier == "u":
+                    amount_sats = amount_value * 100
+                elif amount_multiplier == "m":
+                    amount_sats = amount_value * 100000
+                elif amount_multiplier == "p":
+                    amount_sats = amount_value // 1000
+                elif amount_multiplier == "n":
+                    amount_sats= amount_value // 10
+                else:
+                    amount_sats = amount_value
+
+        print(f"Received a zap from {sender_pubkey} for {amount_sats} sats") # from {sender_pubkey} to {recipient_pubkey}")
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(listen_to_relay())
