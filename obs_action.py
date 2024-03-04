@@ -50,20 +50,22 @@ async def handle_follow_list(follow_list_event, your_pubkey, obs):
             scene_name = "Escape From Tarkov"  # Replace with the name of your scene
             await toggle_source_group(obs, scene_name, source_group_name)
 
-# Modify the toggle_source_group function to accept the scene name
 async def toggle_source_group(obs, scene_name, source_group_name):
-    # Enable the source group in the specified scene
-    obs_response_enable = obs.call(requests.SetSceneItemProperties(item=source_group_name, scene=scene_name, visible=True))
-    print(f"Enable Response: {obs_response_enable}")
+    # Get the list of scene items in the specified scene
+    scene_items = obs.call(requests.GetSceneItemList(sceneName=scene_name))
 
-    # Wait for a certain interval (e.g., 5 seconds)
-    await asyncio.sleep(5)
+    # Find the source group item in the list
+    source_group_item = next((item for item in scene_items.getSceneItems() if item["name"] == source_group_name), None)
 
-    # Disable the source group in the specified scene
-    obs_response_disable = obs.call(requests.SetSceneItemProperties(item=source_group_name, scene=scene_name, visible=False))
-    print(f"Disable Response: {obs_response_disable}")
-
-    print(f"Toggled source group '{source_group_name}' in scene '{scene_name}'.")
+    if source_group_item:
+        # Enable or disable the visibility of the source group item
+        obs_response = obs.call(
+            requests.SetSceneItemProperties(item=source_group_item["name"], scene=scene_name, visible=not source_group_item["visible"])
+        )
+        print(f"Toggle Response: {obs_response}")
+        print(f"Toggled source group '{source_group_name}' in scene '{scene_name}'.")
+    else:
+        print(f"Source group '{source_group_name}' not found in scene '{scene_name}'.")
 
 if __name__ == "__main__":
     config_path = 'config.json'
